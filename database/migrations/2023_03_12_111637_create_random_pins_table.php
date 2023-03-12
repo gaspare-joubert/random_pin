@@ -21,6 +21,7 @@ class CreateRandomPinsTable extends Migration
                 $table->string('permitted_characters', 36)->nullable(false);
                 $table->boolean('has_been_emitted')->default(0);
                 $table->timestamps();
+                $table->softDeletes();
             });
         }
     }
