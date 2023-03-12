@@ -4,9 +4,6 @@ namespace GaspareJoubert\RandomPin;
 
 use Illuminate\Support\Facades\Facade;
 
-/**
- * @see \GaspareJoubert\RandomPin\Skeleton\SkeletonClass
- */
 class RandomPinFacade extends Facade
 {
     /**
