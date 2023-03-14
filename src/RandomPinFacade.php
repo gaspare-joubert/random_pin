@@ -89,7 +89,6 @@ class RandomPinFacade extends Facade
                     try {
                         RandomPins::withoutTrashed()
                             ->where('permitted_characters', $permittedCharacters)
-                            ->where('deleted_at', null)
                             ->update(['has_been_emitted' => 0]);
 
                         $limit++;
