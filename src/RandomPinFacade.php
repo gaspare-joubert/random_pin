@@ -157,7 +157,7 @@ class RandomPinFacade extends Facade
         $permittedCharactersMax = implode($permittedCharactersArrayMax);
 
         try {
-            foreach (self::xrange($permittedCharactersMin, $permittedCharactersMax, 1) as $pin) {
+            foreach (self::xRange($permittedCharactersMin, $permittedCharactersMax, 1) as $pin) {
                 try {
                     $validatePIN = new ValidatePIN(new SetupPIN(), $pin);
 
@@ -185,7 +185,15 @@ class RandomPinFacade extends Facade
         }
     }
 
-    private static function xrange($start, $limit, $step = 1): \Generator
+    /**
+     * A Generator equivalent of the range function.
+     *
+     * @param $start
+     * @param $limit
+     * @param int $step
+     * @return Generator
+     */
+    private static function xRange($start, $limit, int $step = 1): Generator
     {
         if ($start <= $limit) {
             if ($step <= 0) {
