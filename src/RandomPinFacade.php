@@ -142,4 +142,68 @@ class RandomPinFacade extends Facade
             return false;
         }
     }
+
+    private static function generateNumericalPIN(string $permittedCharacters): bool
+    {
+        $permittedCharactersArray = str_split($permittedCharacters, 1);
+        $permittedCharactersArrayMin = [];
+        $permittedCharactersArrayMax = [];
+        foreach ($permittedCharactersArray as $item)
+        {
+            $permittedCharactersArrayMin[] = '1';
+            $permittedCharactersArrayMax[] = '9';
+        }
+
+        $permittedCharactersMin = implode($permittedCharactersArrayMin);
+        $permittedCharactersMax = implode($permittedCharactersArrayMax);
+
+        try {
+            foreach (self::xrange($permittedCharactersMin, $permittedCharactersMax, 1) as $pin) {
+                try {
+                    $validatePIN = new ValidatePIN(new SetupPIN(), $pin);
+
+                    if ($validatePIN->validatePin() === 'pass') {
+                        try {
+                            $randomPins = new RandomPins();
+                            $randomPins->uuid = Uuid::uuid4();
+                            $randomPins->pin = $pin;
+                            $randomPins->permitted_characters = $permittedCharacters;
+                            $randomPins->save();
+                        } catch (\Exception $ex) {
+                            Log::debug("Unable to store validated pin '{$pin}': {$ex->getMessage()}");
+                            return false;
+                        }
+                    }
+                } catch (\Exception $ex) {
+                    Log::debug("Unable to instantiate ValidatePIN: {$ex->getMessage()}");
+                }
+            }
+
+            return true;
+        } catch (\Exception $ex) {
+            Log::debug("Unable to validate pins: {$ex->getMessage()}");
+            return false;
+        }
+    }
+
+    private static function xrange($start, $limit, $step = 1): \Generator
+    {
+        if ($start <= $limit) {
+            if ($step <= 0) {
+                throw new LogicException('Step must be positive');
+            }
+
+            for ($i = $start; $i <= $limit; $i += $step) {
+                yield $i;
+            }
+        } else {
+            if ($step >= 0) {
+                throw new LogicException('Step must be negative');
+            }
+
+            for ($i = $start; $i >= $limit; $i += $step) {
+                yield $i;
+            }
+        }
+    }
 }
