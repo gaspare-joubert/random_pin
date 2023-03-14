@@ -56,5 +56,8 @@ class RandomPinServiceProvider extends ServiceProvider
         $this->app->singleton('random_pin', function () {
             return new RandomPin;
         });
+
+        $this->app->bind(iPIN::class,
+        SetupPIN::class);
     }
 }
