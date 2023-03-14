@@ -53,9 +53,9 @@ class RandomPinServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/config.php', 'random_pin');
 
         // Register the main class to use with the facade
-        $this->app->singleton('random_pin', function () {
+        /*$this->app->singleton('random_pin', function () {
             return new RandomPin;
-        });
+        });*/
 
         $this->app->bind(iPIN::class,
         SetupPIN::class);
