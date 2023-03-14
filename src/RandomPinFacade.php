@@ -5,6 +5,8 @@ namespace GaspareJoubert\RandomPin;
 use GaspareJoubert\RandomPin\Models\RandomPins;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Log;
+use Ramsey\Uuid\Uuid;
+use Symfony\Component\Translation\Exception\LogicException;
 
 class RandomPinFacade extends Facade
 {
@@ -23,10 +25,10 @@ class RandomPinFacade extends Facade
         $randomPinsToEmit = [];
 
         if ($limit <= 2) {
-            $permittedChars = config('random_pin.permitted_characters') ?? '';
+            $permittedCharacters = config('random_pin.permitted_characters') ?? '';
             $numberOfPINsToGet = config('random_pin.number_of_pins_to_get') ?? '';
 
-            if (!$permittedChars || !$numberOfPINsToGet) {
+            if (!$permittedCharacters || !$numberOfPINsToGet) {
                 Log::error('Unable to get pin. Missing Permitted Characters or Number of pins to get.');
                 return $randomPinsToEmit;
             }
@@ -34,15 +36,18 @@ class RandomPinFacade extends Facade
             // we first check if any pins have been generated using the permitted characters
             try {
                 $pinsByPermittedCharacters = RandomPins::withoutTrashed()
-                    ->where('permitted_characters', $permittedChars)
+                    ->where('permitted_characters', $permittedCharacters)
                     ->limit(1)
                     ->get(['uuid']);
 
                 if ($pinsByPermittedCharacters->count() == 0) {
                     // go ahead and generate pins
-                    // todo: generate pins
-                    $limit++;
-                    self::getPIN($limit);
+                    if (self::generatePINs($permittedCharacters) === true) {
+                        $limit++;
+                        self::getPIN($limit);
+                    }
+                    // generating the pins has failed
+                    return $randomPinsToEmit;
                 }
             } catch (\Exception $ex) {
                 Log::debug("Unable to get pins by permitted characters: {$ex->getMessage()}");
@@ -52,7 +57,7 @@ class RandomPinFacade extends Facade
             // next we check if any pins using the permitted characters are still available
             try {
                 $randomPins = RandomPins::withoutTrashed()
-                    ->where('permitted_characters', $permittedChars)
+                    ->where('permitted_characters', $permittedCharacters)
                     ->where('has_been_emitted', 0)
                     ->inRandomOrder()
                     ->limit($numberOfPINsToGet)
@@ -83,7 +88,7 @@ class RandomPinFacade extends Facade
                     // get the number of required pins
                     try {
                         RandomPins::withoutTrashed()
-                            ->where('permitted_characters', $permittedChars)
+                            ->where('permitted_characters', $permittedCharacters)
                             ->where('deleted_at', null)
                             ->update(['has_been_emitted' => 0]);
 
@@ -106,25 +111,35 @@ class RandomPinFacade extends Facade
         return $randomPinsToEmit;
     }
 
-    // todo: complete generating the PINs
-    private function generatePINs (string $permittedChars)
+    private static function generatePINs (string $permittedCharacters): bool
     {
         $permittedCharactersIsValid = true;
+        $maxLength = 8;
+        $minLength = 2;
+        $testResultMessages = [];
 
-        // confirm if the permitted characters are valid
-        if ($permittedChars) {
-            // this is the maximum schema length
-            if (strlen($permittedChars) > 36) {
-                $permittedCharactersIsValid = false;
-            }
+        if (strlen($permittedCharacters) > $maxLength) {
+            $permittedCharactersIsValid = false;
+            $testResultMessages[] = "Maximum length of {$maxLength} characters exceeded.";
+        }
+
+        if (strlen($permittedCharacters) < $minLength) {
+            $permittedCharactersIsValid = false;
+            $testResultMessages[] = "Minimum length of characters is {$minLength} .";
+        }
+
+        // only numbers are permitted
+        if (preg_match('/^\d+$/', $permittedCharacters) !== 1) {
+            $permittedCharactersIsValid = false;
+            $testResultMessages[] = 'Only numbers are allowed.';
         }
 
         if ($permittedCharactersIsValid) {
-            if (preg_match('/^\d+$/', $permittedChars) === 1) {
-                // permitted characters are numerical
-            } else {
-                // permitted characters are alphanumerical
-            };
+            return self::generateNumericalPIN($permittedCharacters);
+        } else {
+            $testResultMessages = implode(' ', $testResultMessages);
+            Log::debug("Permitted characters are not valid: {$testResultMessages}");
+            return false;
         }
     }
 }
