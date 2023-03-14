@@ -4,7 +4,7 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/gaspare-joubert/random_pin.svg?style=flat-square)](https://packagist.org/packages/gaspare-joubert/random_pin)
 ![GitHub Actions](https://github.com/gaspare-joubert/random_pin/actions/workflows/main.yml/badge.svg)
 
-This is where your description should go. Try and limit it to a paragraph or two, and maybe throw in a mention of what PSRs you support to avoid any confusion with users and contributors.
+A laravel package to generate random numerical PINs.
 
 ## Installation
 
@@ -13,17 +13,50 @@ You can install the package via composer:
 ```bash
 composer require gaspare-joubert/random_pin
 ```
+Next step is to publish the configuration for the package. This can be done using the command below
+```bash
+php artisan vendor:publish --provider="GaspareJoubert\RandomPin\RandomPinServiceProvider" 
+```
+This copies the package configuration into `config/random_pin.php`
+
+Then you run migration to create the Random Pins tables
+
+```bash
+php artisan migrate
+```
 
 ## Usage
 
 ```php
-// Usage description here
+This package is compatible with Laravel 8+
+You can provide an example of the PIN to generate
+Either in the package config or by using an .env file
+This example must be numerical with a maximum length of 8 characters
+You can provide the number of PINs to get
+Either in the package config or by using an .env file
 ```
+Models which intend to generate PINs should extend the `GaspareJoubert\RandomPin\RandomPinFacade` facade
+
+```php
+// ...
+use GaspareJoubert\RandomPin\RandomPinFacade;
+// ...
+
+class ExampleModel
+{
+    
+}
+```
+### Generating PIN
+```php 
+$pin = RandomPinFacade::getPIN();
+```
+If pins are generated as expected a populated array would be returned, else an empty array would be returned
 
 ### Testing
 
 ```bash
-composer test
+$ phpunit RandomPinFacadeTest.php
 ```
 
 ### Changelog
@@ -41,7 +74,6 @@ If you discover any security related issues, please email gasparejoubert@gascoso
 ## Credits
 
 -   [Gaspare Joubert](https://github.com/gaspare-joubert)
--   [All Contributors](../../contributors)
 
 ## License
 
