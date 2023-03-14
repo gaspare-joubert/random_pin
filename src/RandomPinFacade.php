@@ -4,6 +4,7 @@ namespace GaspareJoubert\RandomPin;
 
 use GaspareJoubert\RandomPin\Models\RandomPins;
 use Illuminate\Support\Facades\Facade;
+use Illuminate\Support\Facades\Log;
 
 class RandomPinFacade extends Facade
 {
@@ -17,66 +18,96 @@ class RandomPinFacade extends Facade
         return 'random_pin';
     }
 
-    // todo: limit number of times recursive call can be made
-    public static function getPIN()
+    public static function getPIN(int $limit = 1): array
     {
         $randomPinsToEmit = [];
 
-        $permittedChars = config('random_pin.permitted_characters') ?? '';
-        $numberOfPINsToGet = config('random_pin.number_of_pins_to_get') ?? '';
+        if ($limit <= 2) {
+            $permittedChars = config('random_pin.permitted_characters') ?? '';
+            $numberOfPINsToGet = config('random_pin.number_of_pins_to_get') ?? '';
 
-        if (!$permittedChars || !$numberOfPINsToGet) {
-            return;
-        }
-
-        // we first check if any pins have been generated using the permitted characters
-        $pinsByPermittedCharacters = RandomPins::withoutTrashed()
-            ->where('permitted_characters', $permittedChars)
-            ->limit(1)
-            ->get(['uuid']);
-
-        if ($pinsByPermittedCharacters->count() == 0) {
-            // go ahead and generate pins
-            // todo: generate pins
-            self::getPIN();
-        }
-
-        // next we check if any pins using the permitted characters are still available
-        $randomPins = RandomPins::withoutTrashed()
-            ->where('permitted_characters', $permittedChars)
-            ->where('has_been_emitted', 0)
-            ->inRandomOrder()
-            ->limit($numberOfPINsToGet)
-            ->get(['uuid','pin']);
-
-        $randomPinsCount = $randomPins->count();
-
-        if ($randomPinsCount == $numberOfPINsToGet) {
-            foreach ($randomPins as $randomPin) {
-                $randomPinsToEmit[] = $randomPin->pin;
-
-                // update the pin has been emitted
-                RandomPins::where('uuid', $randomPin->uuid)
-                    ->update(['has_been_emitted' => 1]);
+            if (!$permittedChars || !$numberOfPINsToGet) {
+                Log::error('Unable to get pin. Missing Permitted Characters or Number of pins to get.');
+                return $randomPinsToEmit;
             }
 
+            // we first check if any pins have been generated using the permitted characters
+            try {
+                $pinsByPermittedCharacters = RandomPins::withoutTrashed()
+                    ->where('permitted_characters', $permittedChars)
+                    ->limit(1)
+                    ->get(['uuid']);
+
+                if ($pinsByPermittedCharacters->count() == 0) {
+                    // go ahead and generate pins
+                    // todo: generate pins
+                    $limit++;
+                    self::getPIN($limit);
+                }
+            } catch (\Exception $ex) {
+                Log::debug("Unable to get pins by permitted characters: {$ex->getMessage()}");
+                return $randomPinsToEmit;
+            }
+
+            // next we check if any pins using the permitted characters are still available
+            try {
+                $randomPins = RandomPins::withoutTrashed()
+                    ->where('permitted_characters', $permittedChars)
+                    ->where('has_been_emitted', 0)
+                    ->inRandomOrder()
+                    ->limit($numberOfPINsToGet)
+                    ->get(['uuid','pin']);
+
+                $randomPinsCount = $randomPins->count();
+
+                if ($randomPinsCount == $numberOfPINsToGet) {
+                    foreach ($randomPins as $randomPin) {
+                        // update the pin has been emitted
+                        try {
+                            RandomPins::where('uuid', $randomPin->uuid)
+                                ->update(['has_been_emitted' => 1]);
+
+                            $randomPinsToEmit[] = $randomPin->pin;
+                        } catch (\Exception $ex) {
+                            Log::debug("Unable to update random pins when count is equal: {$ex->getMessage()}");
+                            return $randomPinsToEmit;
+                        }
+                    }
+
+                    return $randomPinsToEmit;
+                }
+
+                if ($randomPinsCount == 0 || ($randomPinsCount > 0 && $randomPinsCount < $numberOfPINsToGet)) {
+                    // if we do not have enough pins left to emit
+                    // reset all the ones which have not been deleted
+                    // get the number of required pins
+                    try {
+                        RandomPins::withoutTrashed()
+                            ->where('permitted_characters', $permittedChars)
+                            ->where('deleted_at', null)
+                            ->update(['has_been_emitted' => 0]);
+
+                        $limit++;
+                        self::getPIN($limit);
+                    } catch (\Exception $ex) {
+                        Log::debug("Unable to update random pins when count is not equal: {$ex->getMessage()}");
+                        return $randomPinsToEmit;
+                    }
+                }
+            } catch (\Exception $ex) {
+                Log::debug("Unable to get random pins: {$ex->getMessage()}");
+                return $randomPinsToEmit;
+            }
+        } else {
+            Log::debug('Unable to get random pins with the maximum number of calls.');
             return $randomPinsToEmit;
         }
 
-        if ($randomPinsCount == 0 || ($randomPinsCount > 0 && $randomPinsCount < $numberOfPINsToGet)) {
-            // if we do not have enough pins left to emit
-            // reset all the ones which have not been deleted
-            // get the number of required pins
-            RandomPins::where('permitted_characters', $permittedChars)
-                ->where('deleted_at', null)
-                ->update(['has_been_emitted' => 0]);
-
-            self::getPIN();
-        }
+        return $randomPinsToEmit;
     }
 
     // todo: complete generating the PINs
-    private function generatePINs ($permittedChars)
+    private function generatePINs (string $permittedChars)
     {
         $permittedCharactersIsValid = true;
 
