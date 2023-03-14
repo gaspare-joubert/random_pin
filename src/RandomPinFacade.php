@@ -20,6 +20,13 @@ class RandomPinFacade extends Facade
         return 'random_pin';
     }
 
+    /**
+     * Get available, stored PINs.
+     * Generate and store PINs if none are available.
+     *
+     * @param int $limit The maximum number of recursive calls allowed is 2.
+     * @return array $randomPinsToEmit, an array of random PINs.
+     */
     public static function getPIN(int $limit = 1): array
     {
         $randomPinsToEmit = [];
@@ -110,6 +117,10 @@ class RandomPinFacade extends Facade
         return $randomPinsToEmit;
     }
 
+    /**
+     * @param string $permittedCharacters
+     * @return bool
+     */
     private static function generatePINs (string $permittedCharacters): bool
     {
         $permittedCharactersIsValid = true;
@@ -142,6 +153,10 @@ class RandomPinFacade extends Facade
         }
     }
 
+    /**
+     * @param string $permittedCharacters
+     * @return bool
+     */
     private static function generateNumericalPIN(string $permittedCharacters): bool
     {
         $permittedCharactersArray = str_split($permittedCharacters, 1);
