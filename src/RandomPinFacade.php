@@ -3,6 +3,7 @@
 namespace GaspareJoubert\RandomPin;
 
 use GaspareJoubert\RandomPin\Models\RandomPins;
+use Generator;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Log;
 use Ramsey\Uuid\Uuid;
