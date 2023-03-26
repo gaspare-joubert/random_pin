@@ -175,7 +175,7 @@ class RandomPinFacade extends Facade
         try {
             foreach (self::xRange($permittedCharactersMin, $permittedCharactersMax, 1) as $generatedPIN) {
                 try {
-                    $pIN = new PIN(new SetupPIN(), $generatedPIN);
+                    $pIN = self::$app->make(PIN::class, ['pin' => $generatedPIN]);
 
                     if (self::validatePIN($pIN) === 'pass') {
                         try {
