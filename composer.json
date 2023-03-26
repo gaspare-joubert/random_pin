@@ -46,7 +46,7 @@
                 "GaspareJoubert\\RandomPin\\RandomPinServiceProvider"
             ],
             "aliases": {
-                "RandomPin": "GaspareJoubert\\RandomPin\\RandomPinFacade"
+                "RandomPin": "RandomPINFacade"
             }
         }
     }

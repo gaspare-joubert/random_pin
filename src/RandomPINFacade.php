@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\Translation\Exception\LogicException;
 
-class RandomPinFacade extends Facade
+class RandomPINFacade extends Facade
 {
     /**
      * Get the registered name of the component.

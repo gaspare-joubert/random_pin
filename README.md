@@ -35,11 +35,11 @@ This example must be numerical with a maximum length of 8 characters
 You can provide the number of PINs to get
 Either in the package config or by using an .env file
 ```
-Models which intend to generate PINs should extend the `GaspareJoubert\RandomPin\RandomPinFacade` facade
+Models which intend to generate PINs should extend the `GaspareJoubert\RandomPin\RandomPINFacade` facade
 
 ```php
 // ...
-use GaspareJoubert\RandomPin\RandomPinFacade;
+use GaspareJoubert\RandomPin\RandomPINFacade;
 // ...
 
 class ExampleModel
@@ -49,7 +49,7 @@ class ExampleModel
 ```
 ### Generating PIN
 ```php 
-$pin = RandomPinFacade::getPIN();
+$pin = RandomPINFacade::getPIN();
 ```
 If pins are generated as expected a populated array would be returned, else an empty array would be returned
 
