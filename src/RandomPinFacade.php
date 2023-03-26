@@ -30,36 +30,36 @@ class RandomPinFacade extends Facade
      */
     public static function getPIN(int $limit = 1): array
     {
-        $randomPinsToEmit = [];
+        $randomPINsToEmit = [];
 
         if ($limit <= 2) {
             $permittedCharacters = config('random_pin.permitted_characters') ?? '';
             $numberOfPINsToGet = config('random_pin.number_of_pins_to_get') ?? '';
 
             if (!$permittedCharacters || !$numberOfPINsToGet) {
-                Log::error('Unable to get pin. Missing Permitted Characters or Number of pins to get.');
-                return $randomPinsToEmit;
+                Log::error('Unable to get PIN. Missing Permitted Characters or Number of pins to get.');
+                return $randomPINsToEmit;
             }
 
             // we first check if any pins have been generated using the permitted characters
             try {
-                $pinsByPermittedCharacters = RandomPins::withoutTrashed()
+                $pINsByPermittedCharacters = RandomPins::withoutTrashed()
                     ->where('permitted_characters', $permittedCharacters)
                     ->limit(1)
                     ->get(['uuid']);
 
-                if ($pinsByPermittedCharacters->count() == 0) {
+                if ($pINsByPermittedCharacters->count() == 0) {
                     // go ahead and generate pins
                     if (self::generatePINs($permittedCharacters) === true) {
                         $limit++;
                         self::getPIN($limit);
                     }
                     // generating the pins has failed
-                    return $randomPinsToEmit;
+                    return $randomPINsToEmit;
                 }
             } catch (\Exception $ex) {
                 Log::debug("Unable to get pins by permitted characters: {$ex->getMessage()}");
-                return $randomPinsToEmit;
+                return $randomPINsToEmit;
             }
 
             // next we check if any pins using the permitted characters are still available
@@ -75,19 +75,19 @@ class RandomPinFacade extends Facade
 
                 if ($randomPinsCount == $numberOfPINsToGet) {
                     foreach ($randomPins as $randomPin) {
-                        // update the pin has been emitted
+                        // update the PIN has been emitted
                         try {
                             RandomPins::where('uuid', $randomPin->uuid)
                                 ->update(['has_been_emitted' => 1]);
 
-                            $randomPinsToEmit[] = $randomPin->pin;
+                            $randomPINsToEmit[] = $randomPin->pin;
                         } catch (\Exception $ex) {
                             Log::debug("Unable to update random pins when count is equal: {$ex->getMessage()}");
-                            return $randomPinsToEmit;
+                            return $randomPINsToEmit;
                         }
                     }
 
-                    return $randomPinsToEmit;
+                    return $randomPINsToEmit;
                 }
 
                 if ($randomPinsCount == 0 || ($randomPinsCount > 0 && $randomPinsCount < $numberOfPINsToGet)) {
@@ -103,19 +103,19 @@ class RandomPinFacade extends Facade
                         self::getPIN($limit);
                     } catch (\Exception $ex) {
                         Log::debug("Unable to update random pins when count is not equal: {$ex->getMessage()}");
-                        return $randomPinsToEmit;
+                        return $randomPINsToEmit;
                     }
                 }
             } catch (\Exception $ex) {
                 Log::debug("Unable to get random pins: {$ex->getMessage()}");
-                return $randomPinsToEmit;
+                return $randomPINsToEmit;
             }
         } else {
             Log::debug('Unable to get random pins with the maximum number of calls.');
-            return $randomPinsToEmit;
+            return $randomPINsToEmit;
         }
 
-        return $randomPinsToEmit;
+        return $randomPINsToEmit;
     }
 
     /**
@@ -185,7 +185,7 @@ class RandomPinFacade extends Facade
                             $randomPins->permitted_characters = $permittedCharacters;
                             $randomPins->save();
                         } catch (\Exception $ex) {
-                            Log::debug("Unable to store validated pin '{$generatedPIN}': {$ex->getMessage()}");
+                            Log::debug("Unable to store validated PIN '{$generatedPIN}': {$ex->getMessage()}");
                             return false;
                         }
                     }
@@ -231,7 +231,7 @@ class RandomPinFacade extends Facade
     }
 
     /**
-     * If any of the test conditions returns true, the pin has failed validation.
+     * If any of the test conditions returns true, the PIN has failed validation.
      * Return 'fail'.
      *
      * @param PIN $pIN
