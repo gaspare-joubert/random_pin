@@ -5,7 +5,7 @@ namespace GaspareJoubert\RandomPin\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class RandomPins extends Model
+class RandomPINs extends Model
 {
     use SoftDeletes;
 

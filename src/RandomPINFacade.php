@@ -2,7 +2,7 @@
 
 namespace GaspareJoubert\RandomPin;
 
-use GaspareJoubert\RandomPin\Models\RandomPins;
+use GaspareJoubert\RandomPin\Models\RandomPINs;
 use Generator;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Log;
@@ -43,7 +43,7 @@ class RandomPINFacade extends Facade
 
             // we first check if any PINs have been generated using the permitted characters
             try {
-                $pINsByPermittedCharacters = RandomPins::withoutTrashed()
+                $pINsByPermittedCharacters = RandomPINs::withoutTrashed()
                     ->where('permitted_characters', $permittedCharacters)
                     ->limit(1)
                     ->get(['uuid']);
@@ -64,7 +64,7 @@ class RandomPINFacade extends Facade
 
             // next we check if any PINs using the permitted characters are still available
             try {
-                $randomPINs = RandomPins::withoutTrashed()
+                $randomPINs = RandomPINs::withoutTrashed()
                     ->where('permitted_characters', $permittedCharacters)
                     ->where('has_been_emitted', 0)
                     ->inRandomOrder()
@@ -77,7 +77,7 @@ class RandomPINFacade extends Facade
                     foreach ($randomPINs as $randomPIN) {
                         // update the PIN has been emitted
                         try {
-                            RandomPins::where('uuid', $randomPIN->uuid)
+                            RandomPINs::where('uuid', $randomPIN->uuid)
                                 ->update(['has_been_emitted' => 1]);
 
                             $randomPINsToEmit[] = $randomPIN->pin;
@@ -95,7 +95,7 @@ class RandomPINFacade extends Facade
                     // reset all the ones which have not been deleted
                     // get the number of required PINs
                     try {
-                        RandomPins::withoutTrashed()
+                        RandomPINs::withoutTrashed()
                             ->where('permitted_characters', $permittedCharacters)
                             ->update(['has_been_emitted' => 0]);
 
@@ -179,7 +179,7 @@ class RandomPINFacade extends Facade
 
                     if (self::validatePIN($pIN) === 'pass') {
                         try {
-                            $randomPINs = new RandomPins();
+                            $randomPINs = new RandomPINs();
                             $randomPINs->uuid = Uuid::uuid4();
                             $randomPINs->pin = $generatedPIN;
                             $randomPINs->permitted_characters = $permittedCharacters;
