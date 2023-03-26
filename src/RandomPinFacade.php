@@ -173,19 +173,19 @@ class RandomPinFacade extends Facade
         $permittedCharactersMax = implode($permittedCharactersArrayMax);
 
         try {
-            foreach (self::xRange($permittedCharactersMin, $permittedCharactersMax, 1) as $pin) {
+            foreach (self::xRange($permittedCharactersMin, $permittedCharactersMax, 1) as $generatedPIN) {
                 try {
-                    $validatePIN = new ValidatePIN(new SetupPIN(), $pin);
+                    $pIN = new PIN(new SetupPIN(), $generatedPIN);
 
-                    if ($validatePIN->validatePin() === 'pass') {
+                    if (self::validatePIN($pIN) === 'pass') {
                         try {
                             $randomPins = new RandomPins();
                             $randomPins->uuid = Uuid::uuid4();
-                            $randomPins->pin = $pin;
+                            $randomPins->pin = $generatedPIN;
                             $randomPins->permitted_characters = $permittedCharacters;
                             $randomPins->save();
                         } catch (\Exception $ex) {
-                            Log::debug("Unable to store validated pin '{$pin}': {$ex->getMessage()}");
+                            Log::debug("Unable to store validated pin '{$generatedPIN}': {$ex->getMessage()}");
                             return false;
                         }
                     }
@@ -228,5 +228,29 @@ class RandomPinFacade extends Facade
                 yield $i;
             }
         }
+    }
+
+    /**
+     * If any of the test conditions returns true, the pin has failed validation.
+     * Return 'fail'.
+     *
+     * @param PIN $pIN
+     * @return string
+     */
+    private static function validatePIN(PIN $pIN): string
+    {
+        $tests = get_object_vars($pIN) ?: '';
+
+        if (!$tests) {
+            return 'fail';
+        }
+
+        foreach ($tests as $key => $value) {
+            if ($value === true) {
+                return 'fail';
+            }
+        }
+
+        return 'pass';
     }
 }
