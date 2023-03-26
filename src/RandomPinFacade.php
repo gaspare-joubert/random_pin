@@ -190,7 +190,7 @@ class RandomPinFacade extends Facade
                         }
                     }
                 } catch (\Exception $ex) {
-                    Log::debug("Unable to instantiate ValidatePIN: {$ex->getMessage()}");
+                    Log::debug("Unable to instantiate PIN: {$ex->getMessage()}");
                 }
             }
 
