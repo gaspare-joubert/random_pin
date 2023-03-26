@@ -41,4 +41,6 @@ class RandomPINs extends Model
         'updated_at',
         'deleted_at',
     ];
+
+    protected $table = 'random_pins';
 }
