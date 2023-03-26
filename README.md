@@ -56,7 +56,7 @@ If pins are generated as expected a populated array would be returned, else an e
 ### Testing
 
 ```bash
-$ phpunit RandomPinFacadeTest.php
+$ phpunit RandomPINFacadeTest.php
 ```
 
 ### Changelog

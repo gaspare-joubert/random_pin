@@ -5,7 +5,7 @@ namespace GaspareJoubert\RandomPin\Tests;
 use GaspareJoubert\RandomPin\RandomPINFacade;
 use Orchestra\Testbench\TestCase;
 
-class RandomPinFacadeTest extends TestCase
+class RandomPINFacadeTest extends TestCase
 {
     protected $loadEnvironmentVariables = true;
 
@@ -23,7 +23,7 @@ class RandomPinFacadeTest extends TestCase
 
     public function testFailureGetPIN()
     {
-        $pin = RandomPINFacade::getPIN();
-        $this->assertIsArray($pin);
+        $pIN = RandomPINFacade::getPIN();
+        $this->assertIsArray($pIN);
     }
 }
