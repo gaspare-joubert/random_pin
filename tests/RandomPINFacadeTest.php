@@ -17,7 +17,7 @@ class RandomPINFacadeTest extends TestCase
     protected function getPackageProviders($app): array
     {
         return [
-            'GaspareJoubert\RandomPin\RandomPinServiceProvider',
+            'GaspareJoubert\RandomPin\RandomPINServiceProvider',
         ];
     }
 

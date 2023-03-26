@@ -43,7 +43,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "GaspareJoubert\\RandomPin\\RandomPinServiceProvider"
+                "RandomPINServiceProvider"
             ],
             "aliases": {
                 "RandomPin": "RandomPINFacade"

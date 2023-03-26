@@ -4,7 +4,7 @@ namespace GaspareJoubert\RandomPin;
 
 use Illuminate\Support\ServiceProvider;
 
-class RandomPinServiceProvider extends ServiceProvider
+class RandomPINServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap the application services.
