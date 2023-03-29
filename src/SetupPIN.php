@@ -9,11 +9,7 @@ class SetupPIN implements iPIN
      */
     public function isPalindrome(string $pin): bool
     {
-        if ($pin === strrev($pin)) {
-            return true;
-        }
-
-        return false;
+        return $pin === strrev($pin);
     }
 
     /**
