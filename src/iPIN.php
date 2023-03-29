@@ -22,6 +22,7 @@ interface iPIN
 
     /**
      * Is the PIN repeating numbers, e.g. 2233.
+     * Allow repeating numbers when the PIN length is 5 or more.
      *
      * @param string $pin
      * @return bool
