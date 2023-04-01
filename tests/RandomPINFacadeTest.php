@@ -3,6 +3,7 @@
 namespace GaspareJoubert\RandomPin\Tests;
 
 use GaspareJoubert\RandomPin\RandomPINFacade;
+use GaspareJoubert\RandomPin\SetupPIN;
 use Orchestra\Testbench\TestCase;
 
 class RandomPINFacadeTest extends TestCase
@@ -23,7 +24,14 @@ class RandomPINFacadeTest extends TestCase
 
     public function testFailureGetPIN()
     {
-        $pIN = RandomPINFacade::getPIN();
-        $this->assertIsArray($pIN);
+        $pin = RandomPINFacade::getPIN();
+        $this->assertIsArray($pin);
+    }
+
+    public function testFailureIsPINRepeating()
+    {
+        $pin = '4567';
+        $setup = new SetupPIN();
+        $this->assertTrue($setup->isRepeating($pin), "{$pin} is not repeating numbers.");
     }
 }
