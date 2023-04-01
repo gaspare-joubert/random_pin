@@ -42,10 +42,10 @@ class SetupPIN implements iPIN
      */
     public function isRepeating(string $pin): bool
     {
-        foreach (count_chars($pin, 1) as $i => $val) {
-            if ($val > 1) {
-                return true;
-            }
+        if (strlen($pin) <= 4) {
+            return count(array_filter(count_chars($pin, 1), function ($value) {
+                    return $value > 1;
+                })) > 0;
         }
 
         return false;
