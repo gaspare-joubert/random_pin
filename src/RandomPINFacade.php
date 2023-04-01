@@ -175,9 +175,9 @@ class RandomPINFacade extends Facade
         try {
             foreach (self::xRange($permittedCharactersMin, $permittedCharactersMax, 1) as $generatedPIN) {
                 try {
-                    $pIN = self::$app->make(PIN::class, ['pin' => $generatedPIN]);
+                    $pin = self::$app->make(PIN::class, ['pin' => $generatedPIN]);
 
-                    if (self::validatePIN($pIN) === 'pass') {
+                    if (self::validatePIN($pin) === 'pass') {
                         try {
                             $randomPINs = new RandomPINs();
                             $randomPINs->uuid = Uuid::uuid4();
@@ -234,12 +234,12 @@ class RandomPINFacade extends Facade
      * If any of the test conditions returns true, the PIN has failed validation.
      * Return 'fail'.
      *
-     * @param PIN $pIN
+     * @param PIN $pin
      * @return string
      */
-    private static function validatePIN(PIN $pIN): string
+    private static function validatePIN(PIN $pin): string
     {
-        $tests = get_object_vars($pIN) ?: '';
+        $tests = get_object_vars($pin) ?: '';
 
         if (!$tests) {
             return 'fail';
