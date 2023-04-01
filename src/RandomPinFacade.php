@@ -173,19 +173,19 @@ class RandomPinFacade extends Facade
         $permittedCharactersMax = implode($permittedCharactersArrayMax);
 
         try {
-            foreach (self::xRange($permittedCharactersMin, $permittedCharactersMax, 1) as $pin) {
+            foreach (self::xRange($permittedCharactersMin, $permittedCharactersMax, 1) as $generatedPin) {
                 try {
-                    $validatePIN = new ValidatePIN(new SetupPIN(), $pin);
+                    $pin = new PIN(new SetupPIN(), $generatedPin);
 
-                    if ($validatePIN->validatePin() === 'pass') {
+                    if (self::validatePin($pin)) {
                         try {
                             $randomPins = new RandomPins();
                             $randomPins->uuid = Uuid::uuid4();
-                            $randomPins->pin = $pin;
+                            $randomPins->pin = $generatedPin;
                             $randomPins->permitted_characters = $permittedCharacters;
                             $randomPins->save();
                         } catch (\Exception $ex) {
-                            Log::debug("Unable to store validated pin '{$pin}': {$ex->getMessage()}");
+                            Log::debug("Unable to store validated pin '{$generatedPin}': {$ex->getMessage()}");
                             return false;
                         }
                     }
@@ -228,5 +228,24 @@ class RandomPinFacade extends Facade
                 yield $i;
             }
         }
+    }
+
+    /**
+     * If any of the test conditions returns true, the pin has failed validation.
+     *
+     * @param PIN $pin
+     * @return bool
+     */
+    private static function validatePin(PIN $pin): bool
+    {
+        $tests = get_object_vars($pin) ?: '';
+
+        foreach ($tests as $key => $value) {
+            if ($value === true) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
