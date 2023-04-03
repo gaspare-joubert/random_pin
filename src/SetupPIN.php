@@ -18,19 +18,13 @@ class SetupPIN implements iPIN
     public function isSequential(string $pin): bool
     {
         $pinArray = str_split($pin, 1);
-        $pinArrayLength = count($pinArray);
-
-        $testArray = [];
-        for ($i = 0; $i < $pinArrayLength; $i++) {
-            if ($i === 0) {
-                $testArray[$i] = $pinArray[0];
-            } else {
-                $testArray[$i] = (string)($testArray[$i - 1] + 1);
-            }
+        $countPinArray = count($pinArray);
+        $difference = 0;
+        for ($i = 0; $i < $countPinArray - 1; $i++) {
+            $difference += (int)abs($pinArray[$i] - $pinArray[$i + 1]);
         }
-        $testString = implode($testArray);
 
-        if ($pin === $testString) {
+        if ($difference == $countPinArray - 1) {
             return true;
         }
 

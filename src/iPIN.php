@@ -13,7 +13,7 @@ interface iPIN
     public function isPalindrome(string $pin): bool;
 
     /**
-     * Is the PIN a sequential number, e.g. 1234.
+     * Is the PIN a sequential number, e.g. 1234 or 4321.
      *
      * @param string $pin
      * @return bool
