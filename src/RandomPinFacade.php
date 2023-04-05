@@ -202,6 +202,21 @@ class RandomPinFacade extends Facade
     }
 
     /**
+     * Get the minimum and maximum range of a numerical PIN.
+     * Based on the length of the PIN.
+     *
+     * @param int $pinLength
+     * @return array
+     */
+    public static function getNumericalPinRange(int $pinLength): array
+    {
+        $numericalPinRange['Min'] = str_repeat('0', $pinLength);
+        $numericalPinRange['Max'] = str_repeat('9', $pinLength);
+
+        return $numericalPinRange;
+    }
+
+    /**
      * A Generator equivalent of the range function.
      *
      * @param $start
