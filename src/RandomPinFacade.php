@@ -119,6 +119,35 @@ class RandomPinFacade extends Facade
     }
 
     /**
+     * Get the parameters required in order for the application to continue operation.
+     *
+     * @param string $requiredApplicationParametersKey The config key for the application's required parameters.
+     * @return array
+     */
+    public static function getApplicationParameters(string $requiredApplicationParametersKey = 'required_application_parameters'): array
+    {
+        $applicationParameters = [];
+        $facadeAccessor = self::getFacadeAccessor() ?? '';
+        $requiredApplicationParameters = config($facadeAccessor . '.' . $requiredApplicationParametersKey) ?? false;
+
+        if ($requiredApplicationParameters) {
+            foreach ($requiredApplicationParameters as $key => $parameter) {
+                if ($config = config($facadeAccessor . '.' . $requiredApplicationParametersKey . '.' . $key)) {
+                    $applicationParameters[$key] = $config;
+                } else {
+                    Log::error("Unable to get the parameter '{$key}'.");
+                    return [];
+                }
+            }
+        } else {
+            Log::error("Unable to get the application's required parameters.");
+            return [];
+        }
+
+        return $applicationParameters;
+    }
+
+    /**
      * @param string $permittedCharacters
      * @return bool
      */
