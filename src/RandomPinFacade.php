@@ -33,10 +33,14 @@ class RandomPinFacade extends Facade
         $randomPinsToEmit = [];
 
         if ($limit <= 2) {
-            if (!(count(self::getApplicationParameters()) > 0)) {
+            $countApplicationParameters = self::getApplicationParameters();
+
+            if (!($countApplicationParameters > 0)) {
                 Log::error('Unable to get pin. Application parameters could not be found.');
                 return [];
             }
+
+
         } else {
             Log::debug('Unable to get random pins within the maximum number of allowed calls.');
             return [];
