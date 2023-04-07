@@ -49,7 +49,7 @@ class ExampleModel
 ```
 ### Generating PIN
 ```php 
-$pin = RandomPinFacade::getPIN();
+$pin = RandomPinFacade::getPin();
 ```
 If pins are generated as expected a populated array would be returned, else an empty array would be returned
 

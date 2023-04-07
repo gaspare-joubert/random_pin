@@ -28,91 +28,18 @@ class RandomPinFacade extends Facade
      * @param int $limit The maximum number of recursive calls allowed is 2.
      * @return array $randomPinsToEmit, an array of random PINs.
      */
-    public static function getPIN(int $limit = 1): array
+    public static function getPin(int $limit = 1): array
     {
         $randomPinsToEmit = [];
 
         if ($limit <= 2) {
-            $permittedCharacters = config('random_pin.permitted_characters') ?? '';
-            $numberOfPINsToGet = config('random_pin.number_of_pins_to_get') ?? '';
-
-            if (!$permittedCharacters || !$numberOfPINsToGet) {
-                Log::error('Unable to get pin. Missing Permitted Characters or Number of pins to get.');
-                return $randomPinsToEmit;
-            }
-
-            // we first check if any pins have been generated using the permitted characters
-            try {
-                $pinsByPermittedCharacters = RandomPin::withoutTrashed()
-                    ->where('permitted_characters', $permittedCharacters)
-                    ->limit(1)
-                    ->get(['uuid']);
-
-                if ($pinsByPermittedCharacters->count() == 0) {
-                    // go ahead and generate pins
-                    if (self::generatePINs($permittedCharacters) === true) {
-                        $limit++;
-                        self::getPIN($limit);
-                    }
-                    // generating the pins has failed
-                    return $randomPinsToEmit;
-                }
-            } catch (\Exception $ex) {
-                Log::debug("Unable to get pins by permitted characters: {$ex->getMessage()}");
-                return $randomPinsToEmit;
-            }
-
-            // next we check if any pins using the permitted characters are still available
-            try {
-                $randomPins = RandomPin::withoutTrashed()
-                    ->where('permitted_characters', $permittedCharacters)
-                    ->where('has_been_emitted', 0)
-                    ->inRandomOrder()
-                    ->limit($numberOfPINsToGet)
-                    ->get(['uuid','pin']);
-
-                $randomPinsCount = $randomPins->count();
-
-                if ($randomPinsCount == $numberOfPINsToGet) {
-                    foreach ($randomPins as $randomPin) {
-                        // update the pin has been emitted
-                        try {
-                            RandomPin::where('uuid', $randomPin->uuid)
-                                ->update(['has_been_emitted' => 1]);
-
-                            $randomPinsToEmit[] = $randomPin->pin;
-                        } catch (\Exception $ex) {
-                            Log::debug("Unable to update random pins when count is equal: {$ex->getMessage()}");
-                            return $randomPinsToEmit;
-                        }
-                    }
-
-                    return $randomPinsToEmit;
-                }
-
-                if ($randomPinsCount == 0 || ($randomPinsCount > 0 && $randomPinsCount < $numberOfPINsToGet)) {
-                    // if we do not have enough pins left to emit
-                    // reset all the ones which have not been deleted
-                    // get the number of required pins
-                    try {
-                        RandomPin::withoutTrashed()
-                            ->where('permitted_characters', $permittedCharacters)
-                            ->update(['has_been_emitted' => 0]);
-
-                        $limit++;
-                        self::getPIN($limit);
-                    } catch (\Exception $ex) {
-                        Log::debug("Unable to update random pins when count is not equal: {$ex->getMessage()}");
-                        return $randomPinsToEmit;
-                    }
-                }
-            } catch (\Exception $ex) {
-                Log::debug("Unable to get random pins: {$ex->getMessage()}");
-                return $randomPinsToEmit;
+            if (!(count(self::getApplicationParameters()) > 0)) {
+                Log::error('Unable to get pin. Application parameters could not be found.');
+                return [];
             }
         } else {
-            Log::debug('Unable to get random pins with the maximum number of calls.');
-            return $randomPinsToEmit;
+            Log::debug('Unable to get random pins within the maximum number of allowed calls.');
+            return [];
         }
 
         return $randomPinsToEmit;
