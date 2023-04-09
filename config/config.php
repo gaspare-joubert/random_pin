@@ -10,4 +10,16 @@ return [
         'pin_length' => env('RANDOM_PIN_LENGTH','4'),
         'number_of_pins_to_get' => env('NUMBER_OF_PINS_TO_GET','1'),
     ],
+    'application_parameter_conditions' => [
+        'pin_length_min' => [
+            'statement' => 'required_application_parameters.pin_length.length',
+            'operator' => '>=',
+            'argument' => 'required_application_parameters.pin_length.min_length',
+        ],
+        'pin_length_max' => [
+            'statement' => 'required_application_parameters.pin_length.length',
+            'operator' => '<=',
+            'argument' => 'required_application_parameters.pin_length.max_length',
+        ],
+    ],
 ];
