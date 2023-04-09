@@ -50,6 +50,31 @@ class RandomPinFacade extends Facade
     }
 
     /**
+     * Use config application_parameter_conditions to test application parameters.
+     * If at least one condition fails, return false.
+     * If no conditions are defined, return true as default.
+     *
+     * @param string $applicationParameterConditionsKey
+     * @return bool
+     */
+    public static function isApplicationParametersValid(string $applicationParameterConditionsKey = 'application_parameter_conditions'): bool
+    {
+        $facadeAccessor = self::getFacadeAccessor() ?? '';
+        $applicationParameterConditions = config($facadeAccessor . '.' . $applicationParameterConditionsKey) ?? false;
+
+        if ($applicationParameterConditions) {
+            foreach ($applicationParameterConditions as $applicationParameterCondition) {
+                $collection = collect([['value' => (int)config($facadeAccessor . '.' . $applicationParameterCondition['statement']) ?? '']]);
+                if (!($collection->where('value', $applicationParameterCondition['operator'], (int)config($facadeAccessor . '.' . $applicationParameterCondition['argument']))->isNotEmpty())) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Get the parameters required in order for the application to continue operation.
      *
      * @param string $requiredApplicationParametersKey The config key for the application's required parameters.
