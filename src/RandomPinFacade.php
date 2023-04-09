@@ -60,9 +60,10 @@ class RandomPinFacade extends Facade
         $applicationParameterConditions = config($facadeAccessor . '.' . $applicationParameterConditionsKey) ?? false;
 
         if ($applicationParameterConditions) {
-            foreach ($applicationParameterConditions as $applicationParameterCondition) {
+            foreach ($applicationParameterConditions as $key => $applicationParameterCondition) {
                 $collection = collect([['value' => (int)config($facadeAccessor . '.' . $applicationParameterCondition['statement']) ?? '']]);
                 if (!($collection->where('value', $applicationParameterCondition['operator'], (int)config($facadeAccessor . '.' . $applicationParameterCondition['argument']))->isNotEmpty())) {
+                    Log::debug("Application parameter condition failed: {$key}");
                     return false;
                 }
             }
