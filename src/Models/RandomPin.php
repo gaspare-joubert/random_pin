@@ -31,17 +31,6 @@ class RandomPin extends Model
     ];
 
     /**
-     * The attributes that are searchable.
-     *
-     * @var array
-     */
-    protected $searchableColumns = [
-        'pin',
-        'permitted_characters',
-        'has_been_emitted',
-    ];
-
-    /**
      * Make these dates attributes instances of Carbon
      *
      * @var array

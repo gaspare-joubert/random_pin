@@ -16,7 +16,6 @@ class CreateRandomPinsTable extends Migration
         if(!Schema::hasTable('random_pins')) {
             Schema::create('random_pins', function (Blueprint $table) {
                 $table->id();
-                $table->uuid('uuid');
                 $table->string('pin', 56)->nullable(false);
                 $table->tinyInteger('type')->nullable(false);
                 $table->boolean('has_been_emitted')->default(0);
