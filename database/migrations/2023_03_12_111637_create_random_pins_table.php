@@ -18,7 +18,7 @@ class CreateRandomPinsTable extends Migration
                 $table->id();
                 $table->uuid('uuid');
                 $table->string('pin', 56)->nullable(false);
-                $table->string('permitted_characters', 36)->nullable(false);
+                $table->tinyInteger('type')->nullable(false);
                 $table->boolean('has_been_emitted')->default(0);
                 $table->timestamps();
                 $table->softDeletes();

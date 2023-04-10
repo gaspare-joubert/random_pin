@@ -10,13 +10,23 @@ class RandomPin extends Model
     use SoftDeletes;
 
     /**
+     * When the pin contains only numerical characters.
+     */
+    public const TYPE_NUMERICAL = 1;
+
+    /**
+     * When the pin contains numerical and alphabetical characters.
+     */
+    public const TYPE_ALPHANUMERICAL = 2;
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array
      */
     protected $fillable = [
         'pin',
-        'permitted_characters',
+        'type',
         'has_been_emitted',
     ];
 
