@@ -3,13 +3,11 @@
 namespace GaspareJoubert\RandomPin;
 
 use GaspareJoubert\RandomPin\Models\RandomPin;
-use Generator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Log;
-use Ramsey\Uuid\Uuid;
 use Symfony\Component\Translation\Exception\LogicException;
 
 class RandomPinFacade extends Facade
@@ -48,8 +46,7 @@ class RandomPinFacade extends Facade
             try {
                 $randomPins = self::getRandomPins($pinType, $applicationParameters['number_of_pins_to_get']);
 
-                if (!$randomPins) {
-                    // go ahead and generate pins
+                if (count($randomPins) < $applicationParameters['number_of_pins_to_get']) {
                     if (self::generatePins($pinType, $applicationParameters['pin_length']['length']) === true) {
                         $limit++;
                         self::getPIN($limit);
@@ -104,11 +101,36 @@ class RandomPinFacade extends Facade
     public static function generatePins(int $pinType, int $pinLength): bool
     {
         if ($pinType === RandomPin::TYPE_NUMERICAL) {
-            return self::generateNumericalPin(self::getNumericalPinRange($pinLength), $pinLength);
+            if (self::deleteNumericalPins($pinType, $pinLength) !== 'false') {
+                return self::generateNumericalPin(self::getNumericalPinRange($pinLength), $pinLength);
+            } else {
+                return false;
+            }
         } else {
             Log::debug('Unable to generate alphanumerical pins.');
             return false;
         }
+    }
+
+    /**
+     * Delete all numerical pins with the same number of digits as the config pin length.
+     *
+     * @param int $pinType
+     * @param int $pinLength
+     * @return int|string
+     */
+    public static function deleteNumericalPins(int $pinType, int $pinLength)
+    {
+        try {
+            return RandomPin::withoutTrashed()
+                ->where('type', $pinType)
+                ->whereRaw("LENGTH(pin) = {$pinLength}")
+                ->update(['deleted_at' => now()]);
+        } catch (\Exception $ex) {
+            Log::debug("Unable to delete {$pinLength} digit numerical pins: {$ex->getMessage()}");
+        }
+
+        return 'false';
     }
 
     /**
