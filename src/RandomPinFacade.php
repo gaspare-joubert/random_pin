@@ -31,8 +31,6 @@ class RandomPinFacade extends Facade
      */
     public static function getPin(int $limit = 1): array
     {
-        $randomPinsToEmit = [];
-
         if ($limit <= 2) {
             $applicationParameters = self::getApplicationParameters();
 
@@ -41,18 +39,22 @@ class RandomPinFacade extends Facade
                 return [];
             }
 
-            $pinType = self::getPinType($applicationParameters['permitted_characters']);
-
             try {
-                $randomPins = self::getRandomPins($pinType, $applicationParameters['number_of_pins_to_get']);
+                $randomPins = self::getRandomPins(self::getPinType($applicationParameters['permitted_characters']), $applicationParameters['number_of_pins_to_get']);
 
                 if (count($randomPins) < $applicationParameters['number_of_pins_to_get']) {
-                    if (self::generatePins($pinType, $applicationParameters['pin_length']['length']) === true) {
+                    if (self::generatePins(self::getPinType($applicationParameters['permitted_characters']), $applicationParameters['pin_length']['length']) === true) {
                         $limit++;
                         self::getPIN($limit);
                     }
-                    // generating pins has failed
+
                     return [];
+                } else {
+                    if (self::updateRandomPinHasBeenEmitted($randomPins->pluck('id')->all()) !== 'false') {
+                        return $randomPins->pluck('pin')->all();
+                    } else {
+                        return [];
+                    }
                 }
             } catch (\Exception $ex) {
                 Log::debug("Unable to get random pins: {$ex->getMessage()}");
@@ -63,23 +65,38 @@ class RandomPinFacade extends Facade
             Log::debug('Unable to get random pins within the maximum number of allowed calls.');
             return [];
         }
+    }
 
-        return $randomPinsToEmit;
+    /**
+     * @param array $pinIds
+     * @return bool|int|string
+     */
+    private static function updateRandomPinHasBeenEmitted(array $pinIds)
+    {
+        try {
+            return RandomPin::withoutTrashed()
+                ->whereIn('id', $pinIds)
+                ->update(['has_been_emitted' => 1]);
+        } catch (\Exception $ex) {
+            Log::debug("Unable to update 'has_been_emitted' to 1: {$ex->getMessage()}");
+        }
+
+        return 'false';
     }
 
     /**
      * @param int $pinType
      * @param int $limit
-     * @return RandomPin[]|Builder[]|Collection|\Illuminate\Database\Query\Builder[]|\Illuminate\Support\Collection
+     * @return \Illuminate\Support\Collection
      */
-    public static function getRandomPins(int $pinType, int $limit)
+    public static function getRandomPins(int $pinType, int $limit): \Illuminate\Support\Collection
     {
         return RandomPin::withoutTrashed()
             ->where('type', $pinType)
             ->where('has_been_emitted', 0)
             ->inRandomOrder()
             ->limit($limit)
-            ->get(['pin']);
+            ->get(['id', 'pin']);
     }
 
     /**
