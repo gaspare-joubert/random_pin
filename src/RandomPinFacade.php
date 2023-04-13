@@ -290,6 +290,7 @@ class RandomPinFacade extends Facade
 
     /**
      * A Generator equivalent of the range function.
+     * This was taken from here: https://www.php.net/manual/en/language.generators.overview.php
      *
      * @param $start
      * @param $limit
