@@ -79,9 +79,8 @@ class RandomPinFacade extends Facade
                 ->update(['has_been_emitted' => 1]);
         } catch (\Exception $ex) {
             Log::debug("Unable to update 'has_been_emitted' to 1: {$ex->getMessage()}");
+            return 'false';
         }
-
-        return 'false';
     }
 
     /**
