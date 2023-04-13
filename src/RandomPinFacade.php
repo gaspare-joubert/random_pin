@@ -100,9 +100,8 @@ class RandomPinFacade extends Facade
                 ->get(['id', 'pin']);
         } catch (\Exception $ex) {
             Log::debug("Unable to get random pins: {$ex->getMessage()}");
+            return (collect());
         }
-
-        return (collect());
     }
 
     /**
@@ -151,9 +150,8 @@ class RandomPinFacade extends Facade
                 ->update(['deleted_at' => now()]);
         } catch (\Exception $ex) {
             Log::debug("Unable to delete {$pinLength} digit numerical pins: {$ex->getMessage()}");
+            return 'false';
         }
-
-        return 'false';
     }
 
     /**
