@@ -3,8 +3,8 @@
 namespace GaspareJoubert\RandomPin;
 
 use GaspareJoubert\RandomPin\Models\RandomPin;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
+use Generator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Log;
@@ -87,16 +87,22 @@ class RandomPinFacade extends Facade
     /**
      * @param int $pinType
      * @param int $limit
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
-    public static function getRandomPins(int $pinType, int $limit): \Illuminate\Support\Collection
+    public static function getRandomPins(int $pinType, int $limit): Collection
     {
-        return RandomPin::withoutTrashed()
-            ->where('type', $pinType)
-            ->where('has_been_emitted', 0)
-            ->inRandomOrder()
-            ->limit($limit)
-            ->get(['id', 'pin']);
+        try {
+            return RandomPin::withoutTrashed()
+                ->where('type', $pinType)
+                ->where('has_been_emitted', 0)
+                ->inRandomOrder()
+                ->limit($limit)
+                ->get(['id', 'pin']);
+        } catch (\Exception $ex) {
+            Log::debug("Unable to get random pins: {$ex->getMessage()}");
+        }
+
+        return (collect());
     }
 
     /**
@@ -165,7 +171,7 @@ class RandomPinFacade extends Facade
 
         if ($applicationParameterConditions) {
             foreach ($applicationParameterConditions as $key => $applicationParameterCondition) {
-                $collection = collect([['value' => (int)config($facadeAccessor . '.' . $applicationParameterCondition['statement']) ?? '']]);
+                $collection = collect([['value' => (int)config($facadeAccessor . '.' . $applicationParameterCondition['statement']) ?? false]]);
                 if (!($collection->where('value', $applicationParameterCondition['operator'], (int)config($facadeAccessor . '.' . $applicationParameterCondition['argument']))->isNotEmpty())) {
                     Log::debug("Application parameter condition failed: {$key}");
                     return false;
@@ -245,10 +251,12 @@ class RandomPinFacade extends Facade
                             $data = [];
                         } catch (\Exception $ex) {
                             Log::debug("Unable to insert {$chunk} pins: {$ex->getMessage()}");
+                            return false;
                         }
                     }
                 } catch (\Exception $ex) {
                     Log::debug("Unable to instantiate PIN: {$ex->getMessage()}");
+                    return false;
                 }
             }
             $countData = count($data);
@@ -257,6 +265,7 @@ class RandomPinFacade extends Facade
                     DB::table('random_pins')->insert($data);
                 } catch (\Exception $ex) {
                     Log::debug("Unable to insert {$countData} pins: {$ex->getMessage()}");
+                    return false;
                 }
             }
 
@@ -288,9 +297,9 @@ class RandomPinFacade extends Facade
      * @param $start
      * @param $limit
      * @param int $step
-     * @return array
+     * @return Generator
      */
-    private static function xRange($start, $limit, int $step = 1)
+    private static function xRange($start, $limit, int $step = 1): Generator
     {
         if ($start <= $limit) {
             if ($step <= 0) {
@@ -319,10 +328,10 @@ class RandomPinFacade extends Facade
      */
     private static function validatePin(PIN $pin): bool
     {
-        $tests = get_object_vars($pin) ?: '';
+        $tests = get_object_vars($pin) ?? false;
 
-        foreach ($tests as $key => $value) {
-            if ($value === true) {
+        foreach ($tests as $key => $test) {
+            if ($test === true) {
                 return false;
             }
         }
