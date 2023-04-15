@@ -9,7 +9,7 @@ class Pin
     public $isSequential;
     public $isRepeating;
 
-    public function __construct(iPIN $iPIN, string $pin)
+    public function __construct(iPin $iPIN, string $pin)
     {
         $this->iPIN = $iPIN;
         $this->isPalindrome = $this->iPIN->isPalindrome($pin);

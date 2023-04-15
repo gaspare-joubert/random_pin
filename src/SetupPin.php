@@ -2,7 +2,7 @@
 
 namespace GaspareJoubert\RandomPin;
 
-class SetupPin implements iPIN
+class SetupPin implements iPin
 {
     /**
      * @inheritDoc

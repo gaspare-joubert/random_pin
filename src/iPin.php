@@ -2,7 +2,7 @@
 
 namespace GaspareJoubert\RandomPin;
 
-interface iPIN
+interface iPin
 {
     /**
      * Is the Pin a palindrome, e.g. 2332.
