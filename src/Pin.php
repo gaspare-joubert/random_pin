@@ -2,7 +2,7 @@
 
 namespace GaspareJoubert\RandomPin;
 
-class PIN
+class Pin
 {
     public $iPIN;
     public $isPalindrome;

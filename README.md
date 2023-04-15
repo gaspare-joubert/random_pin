@@ -29,7 +29,7 @@ php artisan migrate
 
 ```php
 This package is compatible with Laravel 8+
-You can provide an example of the PIN to generate
+You can provide an example of the Pin to generate
 Either in the package config or by using an .env file
 This example must be numerical with a maximum length of 8 characters
 You can provide the number of PINs to get
@@ -47,7 +47,7 @@ class ExampleModel
     
 }
 ```
-### Generating PIN
+### Generating Pin
 ```php 
 $pin = RandomPinFacade::getPin();
 ```

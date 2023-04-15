@@ -233,7 +233,7 @@ class RandomPinFacade extends Facade
         try {
             foreach (self::xRange($numericalPinRange['Min'], $numericalPinRange['Max'], 1) as $generatedPin) {
                 try {
-                    $pin = self::$app->make(PIN::class, ['pin' => $generatedPin]);
+                    $pin = self::$app->make(Pin::class, ['pin' => $generatedPin]);
 
                     if (self::validatePin($pin)) {
                         $data[] = [
@@ -252,7 +252,7 @@ class RandomPinFacade extends Facade
                         }
                     }
                 } catch (\Exception $ex) {
-                    Log::debug("Unable to instantiate PIN: {$ex->getMessage()}");
+                    Log::debug("Unable to instantiate Pin: {$ex->getMessage()}");
                     return false;
                 }
             }
@@ -321,10 +321,10 @@ class RandomPinFacade extends Facade
     /**
      * If any of the test conditions returns true, the pin has failed validation.
      *
-     * @param PIN $pin
+     * @param Pin $pin
      * @return bool
      */
-    public static function validatePin(PIN $pin): bool
+    public static function validatePin(Pin $pin): bool
     {
         $tests = get_object_vars($pin) ?? [];
 
