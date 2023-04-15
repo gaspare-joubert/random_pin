@@ -239,6 +239,7 @@ class RandomPinFacade extends Facade
                         $data[] = [
                             'pin' => sprintf("%'.0{$pinLength}d", $generatedPin),
                             'type' => RandomPin::TYPE_NUMERICAL,
+                            'created_at' => now(),
                         ];
                     }
 
