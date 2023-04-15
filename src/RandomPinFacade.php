@@ -71,7 +71,7 @@ class RandomPinFacade extends Facade
      * @param array $pinIds
      * @return bool|int|string
      */
-    private static function updateRandomPinHasBeenEmitted(array $pinIds)
+    public static function updateRandomPinHasBeenEmitted(array $pinIds)
     {
         try {
             return RandomPin::withoutTrashed()
@@ -298,7 +298,7 @@ class RandomPinFacade extends Facade
      * @param int $step
      * @return Generator
      */
-    private static function xRange($start, $limit, int $step = 1): Generator
+    public static function xRange($start, $limit, int $step = 1): Generator
     {
         if ($start <= $limit) {
             if ($step <= 0) {
