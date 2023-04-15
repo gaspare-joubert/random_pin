@@ -84,7 +84,7 @@ class RandomPinFacadeTest extends TestCase
      */
     public function testFailureIsApplicationParametersValid()
     {
-        $this->assertTrue(RandomPinFacade::isApplicationParametersValid(), 'Not all parameter conditions were met.');
+        $this->assertTrue(RandomPinFacade::isApplicationParametersValid(), "Not all parameter conditions were met.\nVerify .env settings.");
     }
 
     /**
@@ -98,7 +98,7 @@ class RandomPinFacadeTest extends TestCase
         if ($permittedCharacters && $numericalPinType) {
             $test = RandomPinFacade::getPinType($permittedCharacters);
             $this->assertIsInt($test, 'The pin type is not an integer.');
-            $this->assertEquals(RandomPin::TYPE_NUMERICAL, $test, "The pin type does not match numerical: {$numericalPinType}");
+            $this->assertEquals(RandomPin::TYPE_NUMERICAL, $test, "The pin type does not match numerical: {$numericalPinType}.\nThe application is only able to generate numerical pins.\nMake sure 'RANDOM_PIN_PERMITTED_CHARACTERS' only contains numerical characters.");
         } else {
             print_r('Unable to test GetPinTypeNumerical. The pin type or permitted characters could not be determined.');
         }
