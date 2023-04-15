@@ -19,12 +19,17 @@ class SetupPin implements iPin
     {
         $pinArray = str_split($pin, 1);
         $countPinArray = count($pinArray);
-        $difference = 0;
+        $differenceTotal = 0;
+        $differenceOfOneOccurrences = 0;
         for ($i = 0; $i < $countPinArray - 1; $i++) {
-            $difference += (int)abs($pinArray[$i] - $pinArray[$i + 1]);
+            $difference = abs($pinArray[$i] - $pinArray[$i + 1]);
+            $differenceTotal += $difference;
+            if ($difference == 1) {
+                $differenceOfOneOccurrences++;
+            }
         }
 
-        if ($difference == $countPinArray - 1) {
+        if (($differenceTotal == $countPinArray - 1) || ($differenceOfOneOccurrences == $countPinArray - 2)) {
             return true;
         }
 
