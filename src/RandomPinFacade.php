@@ -324,9 +324,9 @@ class RandomPinFacade extends Facade
      * @param PIN $pin
      * @return bool
      */
-    private static function validatePin(PIN $pin): bool
+    public static function validatePin(PIN $pin): bool
     {
-        $tests = get_object_vars($pin) ?? false;
+        $tests = get_object_vars($pin) ?? [];
 
         foreach ($tests as $key => $test) {
             if ($test === true) {
