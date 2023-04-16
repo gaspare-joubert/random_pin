@@ -217,6 +217,9 @@ class RandomPinFacade extends Facade
     {
         $data = [];
         switch ($pinLength) {
+            case 4:
+                $chunk = 1000;
+                break;
             case 5:
                 $chunk = 10000;
                 break;
@@ -224,9 +227,6 @@ class RandomPinFacade extends Facade
             case 7:
             case 8:
                 $chunk = 20000;
-                break;
-            default:
-                $chunk = 1000;
                 break;
         }
 
