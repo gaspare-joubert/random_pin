@@ -40,7 +40,7 @@ class RandomPinFacadeTest extends TestCase
                 $this->assertIsString($pin, "The generated pin,'{$pin}', is not a string.");
             }
         } else {
-            print_r('Unable to test GetPin. Could not determine the number of pins to be returned.');
+            print_r('Unable to test GetPin. Could not determine the number of pins to be generated.');
         }
     }
 
@@ -53,10 +53,10 @@ class RandomPinFacadeTest extends TestCase
         $pinLength = config('random_pin.required_application_parameters.pin_length.length') ?? false;
 
         if ($pinLength) {
-            $test = RandomPinFacade::getNumericalPinRange($pinLength);
-            $this->assertIsArray($test, 'Not an array of a numerical pin range');
-            $this->assertArrayHasKey('Min', $test, "Pin range does not contain 'Min' key.");
-            $this->assertArrayHasKey('Max', $test, "Pin range does not contain 'Max' key.");
+            $numericalPinRange = RandomPinFacade::getNumericalPinRange($pinLength);
+            $this->assertIsArray($numericalPinRange, 'Not an array of a numerical pin range');
+            $this->assertArrayHasKey('Min', $numericalPinRange, "Pin range does not contain 'Min' key.");
+            $this->assertArrayHasKey('Max', $numericalPinRange, "Pin range does not contain 'Max' key.");
         } else {
             print_r('Unable to test GetNumericalPinRange. Could not determine the pin length to be used.');
         }
@@ -69,10 +69,11 @@ class RandomPinFacadeTest extends TestCase
     public function testFailureGetApplicationParameters()
     {
         $expectedCount = config('random_pin.required_application_parameters') ? count(config('random_pin.required_application_parameters')) : false;
+
         if ($expectedCount > 0) {
             $applicationParameters = RandomPinFacade::getApplicationParameters();
             $this->assertIsArray($applicationParameters, 'An array of application parameters not returned.');
-            $this->assertCount($expectedCount, $applicationParameters, "{$expectedCount} application parameters have not been returned");
+            $this->assertCount($expectedCount, $applicationParameters, "The expected number of application parameters, {$expectedCount}, have not been returned");
         } else {
             print_r('Unable to test GetApplicationParameters. The number of application parameters could not be determined.');
         }
@@ -84,7 +85,7 @@ class RandomPinFacadeTest extends TestCase
      */
     public function testFailureIsApplicationParametersValid()
     {
-        $this->assertTrue(RandomPinFacade::isApplicationParametersValid(), "Not all parameter conditions were met.\nVerify .env settings.");
+        $this->assertTrue(RandomPinFacade::isApplicationParametersValid(), "Not all parameter conditions were met.\nVerify .env settings against config 'application_parameter_conditions'.");
     }
 
     /**
@@ -95,10 +96,11 @@ class RandomPinFacadeTest extends TestCase
     {
         $permittedCharacters = config('random_pin.required_application_parameters.permitted_characters') ?? false;
         $numericalPinType = RandomPin::TYPE_NUMERICAL ?? false;
+
         if ($permittedCharacters && $numericalPinType) {
-            $test = RandomPinFacade::getPinType($permittedCharacters);
-            $this->assertIsInt($test, 'The pin type is not an integer.');
-            $this->assertEquals(RandomPin::TYPE_NUMERICAL, $test, "The pin type does not match numerical: {$numericalPinType}.\nThe application is only able to generate numerical pins.\nMake sure 'RANDOM_PIN_PERMITTED_CHARACTERS' only contains numerical characters.");
+            $pinType = RandomPinFacade::getPinType($permittedCharacters);
+            $this->assertIsInt($pinType, 'The pin type is not an integer.');
+            $this->assertEquals(RandomPin::TYPE_NUMERICAL, $pinType, "The pin type does not match numerical pin type: {$numericalPinType}.\nThe application is only able to generate numerical pins.\nMake sure 'RANDOM_PIN_PERMITTED_CHARACTERS' only contains numerical characters.");
         } else {
             print_r('Unable to test GetPinTypeNumerical. The pin type or permitted characters could not be determined.');
         }
@@ -115,8 +117,9 @@ class RandomPinFacadeTest extends TestCase
     {
         $numericalPinType = RandomPin::TYPE_NUMERICAL ?? false;
         $pinLength = config('random_pin.required_application_parameters.pin_length.length') ?? false;
+
         if ($pinLength && $numericalPinType) {
-            $this->assertTrue(RandomPinFacade::generatePins($numericalPinType, $pinLength), "Generating numerical pins failed.");
+            $this->assertTrue(RandomPinFacade::generatePins($numericalPinType, $pinLength), 'Generating numerical pins failed.');
         } else {
             print_r('Unable to test GeneratePinsNumerical. The pin type or length could not be determined.');
         }
