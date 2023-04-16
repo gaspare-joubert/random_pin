@@ -2,10 +2,10 @@
 
 namespace GaspareJoubert\RandomPin;
 
-interface iPIN
+interface iPin
 {
     /**
-     * Is the PIN a palindrome, e.g. 2332.
+     * Is the Pin a palindrome, e.g. 2332.
      *
      * @param string $pin
      * @return bool
@@ -13,7 +13,7 @@ interface iPIN
     public function isPalindrome(string $pin): bool;
 
     /**
-     * Is the PIN a sequential number, e.g. 1234.
+     * Is the Pin a sequential number, e.g. 1234, 4321, 1235 or 5321.
      *
      * @param string $pin
      * @return bool
@@ -21,7 +21,8 @@ interface iPIN
     public function isSequential(string $pin): bool;
 
     /**
-     * Is the PIN repeating numbers, e.g. 2233.
+     * Is the Pin repeating numbers, e.g. 2233.
+     * Allow repeating numbers when the Pin length is 5 or more.
      *
      * @param string $pin
      * @return bool

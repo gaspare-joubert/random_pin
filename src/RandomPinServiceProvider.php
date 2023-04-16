@@ -57,7 +57,12 @@ class RandomPinServiceProvider extends ServiceProvider
             return new RandomPin;
         });*/
 
-        $this->app->bind(iPIN::class,
-        SetupPIN::class);
+        $this->app->bind(iPin::class,
+        SetupPin::class);
+
+        $this->app->bind(Pin::class, function ($app, $params) {
+            $pin = $params['pin'] ?: '';
+            return new Pin(new SetupPin(), $pin);
+        });
     }
 }

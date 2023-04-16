@@ -2,11 +2,12 @@
 
 namespace GaspareJoubert\RandomPin;
 
-use GaspareJoubert\RandomPin\Models\RandomPins;
+use GaspareJoubert\RandomPin\Models\RandomPin;
 use Generator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Log;
-use Ramsey\Uuid\Uuid;
 use Symfony\Component\Translation\Exception\LogicException;
 
 class RandomPinFacade extends Facade
@@ -22,175 +23,247 @@ class RandomPinFacade extends Facade
     }
 
     /**
-     * Get available, stored PINs.
-     * Generate and store PINs if none are available.
+     * Get available, stored pins.
+     * Generate and store pins if none are available.
      *
      * @param int $limit The maximum number of recursive calls allowed is 2.
-     * @return array $randomPinsToEmit, an array of random PINs.
+     * @return array $randomPinsToEmit, an array of random pins.
      */
-    public static function getPIN(int $limit = 1): array
+    public static function getPin(int $limit = 1): array
     {
-        $randomPinsToEmit = [];
-
         if ($limit <= 2) {
-            $permittedCharacters = config('random_pin.permitted_characters') ?? '';
-            $numberOfPINsToGet = config('random_pin.number_of_pins_to_get') ?? '';
+            $applicationParameters = self::getApplicationParameters();
 
-            if (!$permittedCharacters || !$numberOfPINsToGet) {
-                Log::error('Unable to get pin. Missing Permitted Characters or Number of pins to get.');
-                return $randomPinsToEmit;
+            if (!(count($applicationParameters) > 0) || !(self::isApplicationParametersValid())) {
+                Log::error('Unable to get pins using application parameters.');
+                return [];
             }
 
-            // we first check if any pins have been generated using the permitted characters
             try {
-                $pinsByPermittedCharacters = RandomPins::withoutTrashed()
-                    ->where('permitted_characters', $permittedCharacters)
-                    ->limit(1)
-                    ->get(['uuid']);
+                $randomPins = self::getRandomPins(self::getPinType($applicationParameters['permitted_characters']), $applicationParameters['number_of_pins_to_get']);
 
-                if ($pinsByPermittedCharacters->count() == 0) {
-                    // go ahead and generate pins
-                    if (self::generatePINs($permittedCharacters) === true) {
+                if (count($randomPins) < $applicationParameters['number_of_pins_to_get']) {
+                    if (self::generatePins(self::getPinType($applicationParameters['permitted_characters']), $applicationParameters['pin_length']['length']) === true) {
                         $limit++;
                         self::getPIN($limit);
                     }
-                    // generating the pins has failed
-                    return $randomPinsToEmit;
-                }
-            } catch (\Exception $ex) {
-                Log::debug("Unable to get pins by permitted characters: {$ex->getMessage()}");
-                return $randomPinsToEmit;
-            }
 
-            // next we check if any pins using the permitted characters are still available
-            try {
-                $randomPins = RandomPins::withoutTrashed()
-                    ->where('permitted_characters', $permittedCharacters)
-                    ->where('has_been_emitted', 0)
-                    ->inRandomOrder()
-                    ->limit($numberOfPINsToGet)
-                    ->get(['uuid','pin']);
-
-                $randomPinsCount = $randomPins->count();
-
-                if ($randomPinsCount == $numberOfPINsToGet) {
-                    foreach ($randomPins as $randomPin) {
-                        // update the pin has been emitted
-                        try {
-                            RandomPins::where('uuid', $randomPin->uuid)
-                                ->update(['has_been_emitted' => 1]);
-
-                            $randomPinsToEmit[] = $randomPin->pin;
-                        } catch (\Exception $ex) {
-                            Log::debug("Unable to update random pins when count is equal: {$ex->getMessage()}");
-                            return $randomPinsToEmit;
-                        }
-                    }
-
-                    return $randomPinsToEmit;
-                }
-
-                if ($randomPinsCount == 0 || ($randomPinsCount > 0 && $randomPinsCount < $numberOfPINsToGet)) {
-                    // if we do not have enough pins left to emit
-                    // reset all the ones which have not been deleted
-                    // get the number of required pins
-                    try {
-                        RandomPins::withoutTrashed()
-                            ->where('permitted_characters', $permittedCharacters)
-                            ->update(['has_been_emitted' => 0]);
-
-                        $limit++;
-                        self::getPIN($limit);
-                    } catch (\Exception $ex) {
-                        Log::debug("Unable to update random pins when count is not equal: {$ex->getMessage()}");
-                        return $randomPinsToEmit;
+                    return [];
+                } else {
+                    if (self::updateRandomPinHasBeenEmitted($randomPins->pluck('id')->all()) !== 'false') {
+                        return $randomPins->pluck('pin')->all();
+                    } else {
+                        return [];
                     }
                 }
             } catch (\Exception $ex) {
                 Log::debug("Unable to get random pins: {$ex->getMessage()}");
-                return $randomPinsToEmit;
+                return [];
             }
-        } else {
-            Log::debug('Unable to get random pins with the maximum number of calls.');
-            return $randomPinsToEmit;
-        }
 
-        return $randomPinsToEmit;
+        } else {
+            Log::debug('Unable to get random pins within the maximum number of allowed calls.');
+            return [];
+        }
     }
 
     /**
+     * @param array $pinIds
+     * @return bool|int|string
+     */
+    public static function updateRandomPinHasBeenEmitted(array $pinIds)
+    {
+        try {
+            return RandomPin::withoutTrashed()
+                ->whereIn('id', $pinIds)
+                ->update(['has_been_emitted' => 1]);
+        } catch (\Exception $ex) {
+            Log::debug("Unable to update 'has_been_emitted' to 1: {$ex->getMessage()}");
+            return 'false';
+        }
+    }
+
+    /**
+     * @param int $pinType
+     * @param int $limit
+     * @return Collection
+     */
+    public static function getRandomPins(int $pinType, int $limit): Collection
+    {
+        try {
+            return RandomPin::withoutTrashed()
+                ->where('type', $pinType)
+                ->where('has_been_emitted', 0)
+                ->inRandomOrder()
+                ->limit($limit)
+                ->get(['id', 'pin']);
+        } catch (\Exception $ex) {
+            Log::debug("Unable to get random pins: {$ex->getMessage()}");
+            return (collect());
+        }
+    }
+
+    /**
+     * Get the type of pin to generate, based on the config permitted_characters.
+     *
      * @param string $permittedCharacters
+     * @return int
+     */
+    public static function getPinType(string $permittedCharacters): int
+    {
+        return preg_match('/^\d+$/', $permittedCharacters) === 1 ? RandomPin::TYPE_NUMERICAL : RandomPin::TYPE_ALPHANUMERICAL;
+    }
+
+    /**
+     * @param int $pinType
+     * @param int $pinLength
      * @return bool
      */
-    private static function generatePINs (string $permittedCharacters): bool
+    public static function generatePins(int $pinType, int $pinLength): bool
     {
-        $permittedCharactersIsValid = true;
-        $maxLength = 8;
-        $minLength = 2;
-        $testResultMessages = [];
-
-        if (strlen($permittedCharacters) > $maxLength) {
-            $permittedCharactersIsValid = false;
-            $testResultMessages[] = "Maximum length of {$maxLength} characters exceeded.";
-        }
-
-        if (strlen($permittedCharacters) < $minLength) {
-            $permittedCharactersIsValid = false;
-            $testResultMessages[] = "Minimum length of characters is {$minLength} .";
-        }
-
-        // only numbers are permitted
-        if (preg_match('/^\d+$/', $permittedCharacters) !== 1) {
-            $permittedCharactersIsValid = false;
-            $testResultMessages[] = 'Only numbers are allowed.';
-        }
-
-        if ($permittedCharactersIsValid) {
-            return self::generateNumericalPIN($permittedCharacters);
+        if ($pinType === RandomPin::TYPE_NUMERICAL) {
+            if (self::deleteNumericalPins($pinType, $pinLength) !== 'false') {
+                return self::generateNumericalPin(self::getNumericalPinRange($pinLength), $pinLength);
+            } else {
+                return false;
+            }
         } else {
-            $testResultMessages = implode(' ', $testResultMessages);
-            Log::debug("Permitted characters are not valid: {$testResultMessages}");
+            Log::debug('Unable to generate alphanumerical pins.');
             return false;
         }
     }
 
     /**
-     * @param string $permittedCharacters
+     * Delete all numerical pins with the same number of digits as the config pin length.
+     *
+     * @param int $pinType
+     * @param int $pinLength
+     * @return int|string
+     */
+    public static function deleteNumericalPins(int $pinType, int $pinLength)
+    {
+        try {
+            return RandomPin::withoutTrashed()
+                ->where('type', $pinType)
+                ->whereRaw("LENGTH(pin) = {$pinLength}")
+                ->update(['deleted_at' => now()]);
+        } catch (\Exception $ex) {
+            Log::debug("Unable to delete {$pinLength} digit numerical pins: {$ex->getMessage()}");
+            return 'false';
+        }
+    }
+
+    /**
+     * Use config application_parameter_conditions to test application parameters.
+     * If at least one condition fails, return false.
+     * If no conditions are defined, return true as default.
+     *
+     * @param string $applicationParameterConditionsKey
      * @return bool
      */
-    private static function generateNumericalPIN(string $permittedCharacters): bool
+    public static function isApplicationParametersValid(string $applicationParameterConditionsKey = 'application_parameter_conditions'): bool
     {
-        $permittedCharactersArray = str_split($permittedCharacters, 1);
-        $permittedCharactersArrayMin = [];
-        $permittedCharactersArrayMax = [];
-        foreach ($permittedCharactersArray as $item)
-        {
-            $permittedCharactersArrayMin[] = '1';
-            $permittedCharactersArrayMax[] = '9';
+        $facadeAccessor = self::getFacadeAccessor() ?? '';
+        $applicationParameterConditions = config($facadeAccessor . '.' . $applicationParameterConditionsKey) ?? false;
+
+        if ($applicationParameterConditions) {
+            foreach ($applicationParameterConditions as $key => $applicationParameterCondition) {
+                $collection = collect([['value' => (int)config($facadeAccessor . '.' . $applicationParameterCondition['statement']) ?? false]]);
+                if (!($collection->where('value', $applicationParameterCondition['operator'], (int)config($facadeAccessor . '.' . $applicationParameterCondition['argument']))->isNotEmpty())) {
+                    Log::debug("Application parameter condition failed: {$key}");
+                    return false;
+                }
+            }
         }
 
-        $permittedCharactersMin = implode($permittedCharactersArrayMin);
-        $permittedCharactersMax = implode($permittedCharactersArrayMax);
+        return true;
+    }
+
+    /**
+     * Get the parameters required in order for the application to continue operation.
+     *
+     * @param string $requiredApplicationParametersKey The config key for the application's required parameters.
+     * @return array
+     */
+    public static function getApplicationParameters(string $requiredApplicationParametersKey = 'required_application_parameters'): array
+    {
+        $applicationParameters = [];
+        $facadeAccessor = self::getFacadeAccessor() ?? '';
+        $requiredApplicationParameters = config($facadeAccessor . '.' . $requiredApplicationParametersKey) ?? false;
+
+        if ($requiredApplicationParameters) {
+            foreach ($requiredApplicationParameters as $key => $parameter) {
+                if ($config = config($facadeAccessor . '.' . $requiredApplicationParametersKey . '.' . $key)) {
+                    $applicationParameters[$key] = $config;
+                } else {
+                    Log::error("Unable to get the parameter '{$key}'.");
+                    return [];
+                }
+            }
+        } else {
+            Log::error("Unable to get the application's required parameters.");
+            return [];
+        }
+
+        return $applicationParameters;
+    }
+
+    /**
+     * @param array $numericalPinRange
+     * @param int $pinLength
+     * @return bool
+     */
+    public static function generateNumericalPin(array $numericalPinRange, int $pinLength): bool
+    {
+        $data = [];
+        switch ($pinLength) {
+            case 4:
+                $chunk = 1000;
+                break;
+            case 5:
+                $chunk = 10000;
+                break;
+            case 6:
+            case 7:
+            case 8:
+                $chunk = 20000;
+                break;
+        }
 
         try {
-            foreach (self::xRange($permittedCharactersMin, $permittedCharactersMax, 1) as $pin) {
+            foreach (self::xRange($numericalPinRange['Min'], $numericalPinRange['Max'], 1) as $generatedPin) {
                 try {
-                    $validatePIN = new ValidatePIN(new SetupPIN(), $pin);
+                    $pin = self::$app->make(Pin::class, ['pin' => $generatedPin]);
 
-                    if ($validatePIN->validatePin() === 'pass') {
+                    if (self::validatePin($pin)) {
+                        $data[] = [
+                            'pin' => sprintf("%'.0{$pinLength}d", $generatedPin),
+                            'type' => RandomPin::TYPE_NUMERICAL,
+                            'created_at' => now(),
+                        ];
+                    }
+
+                    if (count($data) === $chunk) {
                         try {
-                            $randomPins = new RandomPins();
-                            $randomPins->uuid = Uuid::uuid4();
-                            $randomPins->pin = $pin;
-                            $randomPins->permitted_characters = $permittedCharacters;
-                            $randomPins->save();
+                            DB::table('random_pins')->insert($data);
+                            $data = [];
                         } catch (\Exception $ex) {
-                            Log::debug("Unable to store validated pin '{$pin}': {$ex->getMessage()}");
+                            Log::debug("Unable to insert {$chunk} pin(s): {$ex->getMessage()}");
                             return false;
                         }
                     }
                 } catch (\Exception $ex) {
-                    Log::debug("Unable to instantiate ValidatePIN: {$ex->getMessage()}");
+                    Log::debug("Unable to instantiate Pin: {$ex->getMessage()}");
+                    return false;
+                }
+            }
+            $countData = count($data);
+            if ($countData > 0) {
+                try {
+                    DB::table('random_pins')->insert($data);
+                } catch (\Exception $ex) {
+                    Log::debug("Unable to insert {$countData} pin(s): {$ex->getMessage()}");
+                    return false;
                 }
             }
 
@@ -202,14 +275,30 @@ class RandomPinFacade extends Facade
     }
 
     /**
+     * Get the minimum and maximum range of a numerical pin.
+     * Based on the length of the pin.
+     *
+     * @param int $pinLength
+     * @return array
+     */
+    public static function getNumericalPinRange(int $pinLength): array
+    {
+        $numericalPinRange['Min'] = str_repeat('0', $pinLength);
+        $numericalPinRange['Max'] = str_repeat('9', $pinLength);
+
+        return $numericalPinRange;
+    }
+
+    /**
      * A Generator equivalent of the range function.
+     * This was taken from here: https://www.php.net/manual/en/language.generators.overview.php
      *
      * @param $start
      * @param $limit
      * @param int $step
      * @return Generator
      */
-    private static function xRange($start, $limit, int $step = 1): Generator
+    public static function xRange($start, $limit, int $step = 1): Generator
     {
         if ($start <= $limit) {
             if ($step <= 0) {
@@ -228,5 +317,24 @@ class RandomPinFacade extends Facade
                 yield $i;
             }
         }
+    }
+
+    /**
+     * If any of the test conditions returns true, the pin has failed validation.
+     *
+     * @param Pin $pin
+     * @return bool
+     */
+    public static function validatePin(Pin $pin): bool
+    {
+        $tests = get_object_vars($pin) ?? [];
+
+        foreach ($tests as $key => $test) {
+            if ($test === true) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
