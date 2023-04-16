@@ -248,7 +248,7 @@ class RandomPinFacade extends Facade
                             DB::table('random_pins')->insert($data);
                             $data = [];
                         } catch (\Exception $ex) {
-                            Log::debug("Unable to insert {$chunk} pins: {$ex->getMessage()}");
+                            Log::debug("Unable to insert {$chunk} pin(s): {$ex->getMessage()}");
                             return false;
                         }
                     }
@@ -262,7 +262,7 @@ class RandomPinFacade extends Facade
                 try {
                     DB::table('random_pins')->insert($data);
                 } catch (\Exception $ex) {
-                    Log::debug("Unable to insert {$countData} pins: {$ex->getMessage()}");
+                    Log::debug("Unable to insert {$countData} pin(s): {$ex->getMessage()}");
                     return false;
                 }
             }
